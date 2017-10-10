@@ -79,11 +79,11 @@
   _.filter = function(collection, test) {
     var filtered = [];
 
-    for (var i = 0; i < collection.length; i++) {
-      if (test(collection[i])) {
-        filtered.push(collection[i]);
+    _.each(collection, function(value) {
+      if (test(value)) {
+        filtered.push(value);
       }
-    }
+    });
 
     return filtered;
   };
@@ -92,15 +92,9 @@
   // TIP: see if you can re-use _.filter() here, without simply
   // copying code in and modifying it
   _.reject = function(collection, test) {
-    var rejected = [];
-
-    for (var i = 0; i < collection.length; i++) {
-      if (!test(collection[i])) {
-        rejected.push(collection[i]);        
-      }
-    }
-    
-    return rejected;
+    return _.filter(collection, function(value) {
+      return !test(value);
+    });
   };
 
   // Produce a duplicate-free version of the array.
@@ -172,18 +166,16 @@
       collection = Object.values(collection);
     }
 
-    var i = 0;
-
-    if (accumulator === undefined) {
-        accumulator = collection[0];
-        i = 1;
+    var noAccumulator = accumulator === undefined;
+    
+    _.each(collection, function(value) {
+      if (noAccumulator) {
+        accumulator = value;
+        noAccumulator = false ;
+      } else {
+        accumulator = iterator(accumulator, value);
       }
-
-    while (i < collection.length) {
-      
-      accumulator = iterator(accumulator, collection[i]);
-      i++;
-    }
+    });
 
     return accumulator;
   };
@@ -203,17 +195,12 @@
 
   // Determine whether all of the elements match a truth test.
   _.every = function(collection, iterator) {
-    return _.reduce(collection, function(passesTrue, item) {
-      
-      if (iterator === undefined) {
-        iterator = function(item) { return item };
-      }
-
-      if (!passesTrue) {
-        return false;
-      }
     
-      return Boolean(iterator(item));
+    iterator = iterator || _.identity;
+
+    return !!_.reduce(collection, function(passesTrue, item) {
+    
+      return passesTrue && iterator(item);
   
     }, true);
   };
@@ -223,22 +210,12 @@
   // Determine whether any of the elements pass a truth test. If no iterator is
   // provided, provide a default one
   _.some = function(collection, iterator) {
-    return _.reduce(collection, function(passesTrue, item) {
     
-    if (iterator === undefined) {
-      iterator = function(item) { return item };
-    }
+    iterator = iterator || _.identity; 
 
-    if (passesTrue) {
-      return true;
-    }
-  
-    return Boolean(iterator(item));
-
+    return !!_.reduce(collection, function(passesTrue, item) {
+      return passesTrue || iterator(item);    
   }, false);
-
-
-
 
   };
 
@@ -279,9 +256,7 @@
  
     return _.reduce(args, function(obj, item) {
       for (var key in item) {
-        if (!(obj.hasOwnProperty(key))) {
-          obj[key] = item[key];
-        }
+        obj[key] === undefined && (obj[key] = item[key]);
       };
       return obj;
     });
